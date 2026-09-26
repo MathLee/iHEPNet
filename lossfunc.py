@@ -1,8 +1,10 @@
 import torch
 import torch.nn.functional as F
 import torch.nn as nn
+import pytorch_ssim
 import pytorch_fm
 
+#ssim_loss = pytorch_ssim.SSIM(window_size=11,size_average=True)
 floss = pytorch_fm.FLoss()
 
 
@@ -107,18 +109,41 @@ class DiceLoss(nn.Module):
         return dice_loss
 
 
-
-def classic_loss(pred, mask):
+def structure_loss(pred, mask):
     weit = 1 + 5 * torch.abs(F.avg_pool2d(mask, kernel_size=31, stride=1, padding=15) - mask)
     wbce = F.binary_cross_entropy_with_logits(pred, mask, reduce='none')
     wbce = (weit * wbce).sum(dim=(2, 3)) / weit.sum(dim=(2, 3))
+
+    edge_mask = torch.abs(mask - F.avg_pool2d(mask, kernel_size=3, stride=1, padding=1))
+    edge_pred = torch.abs(pred - F.avg_pool2d(pred, kernel_size=3, stride=1, padding=1))
+    edge_bce = F.binary_cross_entropy_with_logits(edge_pred, edge_mask, reduce='none')
 
     pred = torch.sigmoid(pred)
     inter = ((pred * mask) * weit).sum(dim=(2, 3))
     union = ((pred + mask) * weit).sum(dim=(2, 3))
     wiou = 1 - (inter + 1) / (union - inter + 1)
 
-    return (wbce + wiou).mean()
+    pred_fft = torch.fft.fft2(pred, norm="forward")
+    mask_fft = torch.fft.fft2(mask, norm="forward")
+    ssim_real = 1 - ssim_loss(pred_fft.real, mask_fft.real)
+    ssim_imag = 1 - ssim_loss(pred_fft.imag, mask_fft.imag)
+    ssim_out = (ssim_real + ssim_imag)/2.0
+
+
+    return (wbce + wiou + edge_bce + ssim_out).mean()
+
+def classic_loss(pred, mask):
+    weit = 1 + 5 * torch.abs(F.avg_pool2d(mask, kernel_size=31, stride=1, padding=15) - mask)
+    wbce = F.binary_cross_entropy_with_logits(pred, mask, reduce='none')
+    wbce = (weit * wbce).sum(dim=(2, 3)) / weit.sum(dim=(2, 3))
+
+    #pred = torch.sigmoid(pred)
+    #inter = ((pred * mask) * weit).sum(dim=(2, 3))
+    #union = ((pred + mask) * weit).sum(dim=(2, 3))
+    #wiou = 1 - (inter + 1) / (union - inter + 1)
+
+    #return (wbce + wiou).mean()
+    return wbce.mean()
 
 
 def classic_loss1(pred, mask):
@@ -130,7 +155,9 @@ def classic_loss1(pred, mask):
     inter = ((pred * mask) * weit).sum(dim=(2, 3))
     union = ((pred + mask) * weit).sum(dim=(2, 3))
     wiou = 1 - (inter + 1) / (union - inter + 1)
+    #ssimloss = 1 - ssim_loss(pred, mask)
     fmloss = floss(pred, mask)
+
 
     return (wbce + wiou + fmloss).mean()
 
