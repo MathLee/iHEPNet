@@ -1,5 +1,5 @@
 # iHEPNet
-[TCSVT2026] [iHEPNet] Exploring Information Entropy-driven Interaction and Hierarchical Edge Perception for Lightweight ORSI Salient Object Detection [PDF](https://github.com/MathLee/mathlee.github.io/blob/main/PDF/2026_TCSVT_Gongyang.pdf)|[Homepage](https://mathlee.github.io/)
+[TCSVT2026] [iHEPNet] Exploring Information Entropy-driven Interaction and Hierarchical Edge Perception for Lightweight ORSI Salient Object Detection [IEEE Link](https://ieeexplore.ieee.org/document/11717551/)|[PDF](https://github.com/MathLee/mathlee.github.io/blob/main/PDF/2026_TCSVT_Gongyang.pdf)|[Homepage](https://mathlee.github.io/)
 
 # Network Architecture
    <div align=center>
